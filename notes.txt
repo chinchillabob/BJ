@@ -1,0 +1,21 @@
+Q-learning
+init q table
+what is the state action space
+
+state
+	on_first_two
+		true_count
+		is_soft
+		splitable
+		doubleable
+		player_hand_value
+		dealer_card
+	not_first_two
+		true_count
+		is_soft
+		player_hand_value
+		dealer_card
+
+get all the possible actions given state
+select an action using an e-greedy policy
+update the q-table using the bellman equation
