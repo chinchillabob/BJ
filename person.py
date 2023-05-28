@@ -9,7 +9,7 @@ class Person:
     def hand_value(self):
         accum = 0 
         for card in self.hand:
-            accum += card.gameValue
+            accum += card.gameValue()
 
 
 
@@ -60,13 +60,13 @@ class Player(Person):
 
     def soft_hand(self):
         for card in self.hand:
-            if card.gameValue == 1:
+            if card.gameValue() == 1:
                 if self.hand_value <= 10:
                     return True
         return False
     
     def splittable(self):
-        if len(self.hand) == 2 and self.hand[0].gameValue == self.hand[1].gameValue:
+        if len(self.hand) == 2 and self.hand[0].gameValue() == self.hand[1].gameValue():
             return True
         else:
             return False

@@ -1,5 +1,6 @@
 import playing_cards
 import person
+import random
 
 def get_q_row(player: person.Player, dealer: person.Dealer, deck: playing_cards.Deck):
     true_count = round(deck.runningCount / (deck.len/52))
@@ -17,3 +18,19 @@ def get_q_row(player: person.Player, dealer: person.Dealer, deck: playing_cards.
     else:
         return player.q_table[4][player.hand_value - 6][dealer.dealer_card.gamerValue - 1][true_count + abs(list(person.RANGE_TRUE_COUNT)[0])]
     
+def e_greedy_selection(q_values, epsilon):
+    r = random.uniform(0.0, 1.0)
+    idx = 1
+    max_q = q_values[0]
+    max_q_idx = 0
+    while idx < len(q_values):
+        if q_values[idx] > max_q:
+            max_q = q_values[idx]
+            max_q_idx = idx
+        idx += 1
+    if r < epsilon:
+        d = person.DECISION.copy()
+        d.pop(max_q_idx)
+        return random.choice(d)
+    else:
+        return person.DECISION[max_q_idx]

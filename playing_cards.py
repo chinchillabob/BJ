@@ -25,7 +25,7 @@ class Deck:
         self.runningCount = 0
     def set_frequencyDistrib(self):
         for card in self.cards:
-            self.frequencyDistrib[card.gameValue  - 1] += 1
+            self.frequencyDistrib[card.gameValue() - 1] += 1
     def pull_card_with_val(self, val):
         idx = 0
         while idx < self.len:
