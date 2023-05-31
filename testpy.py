@@ -1,17 +1,19 @@
 import unittest
 import playing_cards
 import person
+import table
 
 class MyTest(unittest.TestCase):
     def test_create_deck(self):
         d = playing_cards.Deck([])
-        d.add_decks(2)
-        self.assertEqual(52*2, d.len)
+        d.add_decks(1)
+        self.assertEqual(d.frequencyDistrib[9], 16)
+        self.assertEqual(len(d.cards), d.len)
     def test_deck_pull(self):
         d = playing_cards.Deck([])
         d.add_decks(2)
         first_card = d.cards[0]
-        pulled_card = d.pull
+        pulled_card = d.pull()
         self.assertEqual(first_card, pulled_card)
     def test_pay(self):
         p1 = person.Player([], 100, 0)
@@ -22,13 +24,57 @@ class MyTest(unittest.TestCase):
         c = [playing_cards.Card('6', 'C'), playing_cards.Card('A', 'D')]
         p1 = person.Player(c, 100, 0)
         self.assertEqual(7, p1.hand_value())
-    def test_get_decision(self):
+    def test_get_dealer_decision(self):
         c = [playing_cards.Card('A', 'C'), playing_cards.Card('6', 'D')]
-        d = person.Dealer([], [], c)
+        d = person.Dealer(c, [], [])
         d.construct_hit_on_soft_17_dealer()
         decision = d.get_decision()
         self.assertEqual('HIT', decision)
-
+    def test_set_frequencyDistrib(self):
+        cards = [playing_cards.Card('K', 'D'), playing_cards.Card('T', 'C')]
+        deck = playing_cards.Deck(cards)
+        deck.set_frequencyDistrib()
+        self.assertEqual(2, deck.frequencyDistrib[9])
+    def test_pull(self):
+        deck = playing_cards.Deck([])
+        deck.add_decks(1)
+        deck.shuffle()
+        pulled_card = deck.pull()
+        self.assertEqual(51, deck.len)
+        self.assertEqual(3, deck.frequencyDistrib[pulled_card.gameValue() - 1] % 4)
+    def test_pull_card_with_val(self):
+        deck = playing_cards.Deck([])
+        deck.add_decks(1)
+        deck.shuffle()
+        deck.pull_card_with_val(10)
+        self.assertEqual(51, deck.len)
+        self.assertEqual(15, deck.frequencyDistrib[9])
+    def test_deal_and_reset(self):
+        t = table.Table(playing_cards.Deck([]) , [person.Player([], 100, 0)], person.Dealer([], [], []))
+        t.deck.add_decks(2)
+        t.dealer.construct_hit_on_soft_17_dealer()
+        t.deal()
+        for pers in t.players + [t.dealer]:
+            self.assertEqual(len(pers.hand), 2)
+    def test_get_e_greedy(self):
+        t = table.Table(playing_cards.Deck([]) , [person.Player([], 100, 0)], person.Dealer([], [], []))
+        t.deck.add_decks(2)
+        t.dealer.construct_hit_on_soft_17_dealer()
+        #t.deck.shuffle()
+        t.deal()
+        selection = t.players[0].get_e_greedy_selection(t.dealer, t.deck, 0.1)
+        self.assertTrue(selection in person.DECISION)
+    
+    """
+    def test_q_table(self):
+        p = person.Player([], 100, 0)
+        print(f"len(p.q_table) {len(p.q_table)}") #q tables
+        print(f"len(p.q_table[1]) {len(p.q_table[1])}") #true count
+        print(f"len(p.q_table[1][24]) {len(p.q_table[1][24])}") #dealer card
+        print(f"len(p.q_table[1][24][1]) {len(p.q_table[1][24][1])}") #player hand value
+        print(f"len(p.q_table[1][24][1][0]) {len(p.q_table[1][24][1][0])}") #q values
+    """
+        
 
 if __name__ == '__main__':
     unittest.main()

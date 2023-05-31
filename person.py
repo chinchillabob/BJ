@@ -1,4 +1,5 @@
 import random
+import playing_cards
 DECISION = ['HIT', 'STAND', 'DOUBLE', 'SURRENDER', 'SPLIT']
 RANGE_TRUE_COUNT = range(-12, 13)
 Q_INIT_POLICY = random.uniform(-1, 1)
@@ -10,12 +11,22 @@ class Person:
         accum = 0 
         for card in self.hand:
             accum += card.gameValue()
+        return accum
+    def _contains_ace(self):
+        for c in self.hand:
+            if c.value == 1:
+                return True
+        return False
+    def soft_hand(self):
+        if self.hand_value() < 11 and self._contains_ace():
+            return True
+        return False
 
 
 
 class Dealer(Person):
-    def __init__(self, hard_count_matrix, soft_count_matrix, hand):
-        super.__init__(hand)
+    def __init__(self, hand, hard_count_matrix, soft_count_matrix):
+        super().__init__(hand)
         self.hard_count_matrix = hard_count_matrix
         self.soft_count_matrix = soft_count_matrix
 
@@ -25,13 +36,13 @@ class Dealer(Person):
     
     def get_decision(self):
         hv = self.hand_value()
-        if self.soft_hand:
-            self.soft_count_matrix[hv - 2]
+        if self.soft_hand():
+            return self.soft_count_matrix[hv - 2]
         else:
-            self.hard_count_matrix[hv - 4]
+            return self.hard_count_matrix[hv - 4]
     def dealer_card(self):
         if len(self.hand) > 0:
-            return self.hand[0]
+            return self.hand[1]
         else:
             raise Exception("dealer hand must have a card to get showing card")
 
@@ -61,7 +72,7 @@ class Player(Person):
     def soft_hand(self):
         for card in self.hand:
             if card.gameValue() == 1:
-                if self.hand_value <= 10:
+                if self.hand_value() <= 10:
                     return True
         return False
     
@@ -70,3 +81,35 @@ class Player(Person):
             return True
         else:
             return False
+        
+    def get_q_row(self, dealer, deck):
+        true_count = round(deck.runningCount / (deck.len/52))
+        is_first_two = len(self.hand)
+        is_soft = self.soft_hand()
+        is_splittable = self.splittable()
+        #print(f"count idx {true_count + min(RANGE_TRUE_COUNT) * -1}")
+        #print(f"dealer card idx {dealer.dealer_card().gameValue() - 1}")
+        if is_splittable:
+            return self.q_table[0][true_count + min(RANGE_TRUE_COUNT) * -1][dealer.dealer_card().gameValue() - 1][self.hand[0].gameValue() - 1]
+        elif is_soft and is_first_two:
+            return self.q_table[1][true_count + min(RANGE_TRUE_COUNT) * -1 ][dealer.dealer_card().gameValue() - 1][self.hand_value() - 2]
+        elif is_first_two:
+            return self.q_table[2][true_count + min(RANGE_TRUE_COUNT) * -1 ][dealer.dealer_card().gameValue() - 1][self.hand_value() - 5]
+        elif is_soft:
+            return self.q_table[3][true_count + min(RANGE_TRUE_COUNT) * -1 ][dealer.dealer_card().gameValue() - 1][self.hand_value() - 4]
+        else:
+            return self.q_table[4][true_count + min(RANGE_TRUE_COUNT) * -1 ][dealer.dealer_card().gameValue() - 1][self.hand_value() - 6]
+            
+    def e_greedy_selection(self, q_values, epsilon):
+        r = random.uniform(0.0, 1.0)
+        max_q = max(q_values)
+        max_q_idx = q_values.index(max_q)
+        if r < epsilon:
+            d = DECISION.copy()
+            d.pop(max_q_idx)
+            return random.choice(d)
+        else:
+            return DECISION[max_q_idx]
+
+    def get_e_greedy_selection(self, dealer: Dealer, deck: playing_cards.Deck, epsilon: float):
+        return self.e_greedy_selection(self.get_q_row(dealer, deck), epsilon)
