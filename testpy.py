@@ -13,8 +13,10 @@ class MyTest(unittest.TestCase):
         d = playing_cards.Deck([])
         d.add_decks(2)
         first_card = d.cards[0]
+        freq_dist_t_0 = d.frequencyDistrib.copy()
         pulled_card = d.pull()
         self.assertEqual(first_card, pulled_card)
+        self.assertEqual(freq_dist_t_0[pulled_card.gameValue() - 1] - 1, d.frequencyDistrib[pulled_card.gameValue() - 1])
     def test_pay(self):
         p1 = person.Player([], 100, 0)
         bet_size = 20
@@ -56,14 +58,25 @@ class MyTest(unittest.TestCase):
         t.deal()
         for pers in t.players + [t.dealer]:
             self.assertEqual(len(pers.hand), 2)
+        self.assertEqual(len(t.dealer.hand), 2)
+    
     def test_get_e_greedy(self):
         t = table.Table(playing_cards.Deck([]) , [person.Player([], 100, 0)], person.Dealer([], [], []))
         t.deck.add_decks(2)
         t.dealer.construct_hit_on_soft_17_dealer()
-        #t.deck.shuffle()
         t.deal()
         selection = t.players[0].get_e_greedy_selection(t.dealer, t.deck, 0.1)
         self.assertTrue(selection in person.DECISION)
+
+    def test_max_q_accum(self): 
+        t = table.Table(playing_cards.Deck([]) , [person.Player([], 100, 0)], person.Dealer([], [], []))
+        t.deck.add_decks(2)
+        t.dealer.construct_hit_on_soft_17_dealer()
+        t.deck.shuffle()
+        t.deal()
+        t.deck.add_decks(2)
+        t.dealer.construct_hit_on_soft_17_dealer()
+        print(t.players[0].max_q_accum(t.dealer, t.deck))
     
     """
     def test_q_table(self):

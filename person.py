@@ -1,3 +1,4 @@
+import copy
 import random
 import playing_cards
 DECISION = ['HIT', 'STAND', 'DOUBLE', 'SURRENDER', 'SPLIT']
@@ -90,16 +91,17 @@ class Player(Person):
         #print(f"count idx {true_count + min(RANGE_TRUE_COUNT) * -1}")
         #print(f"dealer card idx {dealer.dealer_card().gameValue() - 1}")
         if is_splittable:
-            return self.q_table[0][true_count + min(RANGE_TRUE_COUNT) * -1][dealer.dealer_card().gameValue() - 1][self.hand[0].gameValue() - 1]
+            return self.q_table[0][true_count + min(RANGE_TRUE_COUNT) * -1 ][dealer.dealer_card().gameValue() - 1][self.hand[0].gameValue() - 1]
         elif is_soft and is_first_two:
             return self.q_table[1][true_count + min(RANGE_TRUE_COUNT) * -1 ][dealer.dealer_card().gameValue() - 1][self.hand_value() - 2]
         elif is_first_two:
             return self.q_table[2][true_count + min(RANGE_TRUE_COUNT) * -1 ][dealer.dealer_card().gameValue() - 1][self.hand_value() - 5]
         elif is_soft:
-            return self.q_table[3][true_count + min(RANGE_TRUE_COUNT) * -1 ][dealer.dealer_card().gameValue() - 1][self.hand_value() - 4]
+            return self.q_table[3][true_count + min(RANGE_TRUE_COUNT) * -1 ][dealer.dealer_card().gameValue() - 1][self.hand_value() - 13]
         else:
             return self.q_table[4][true_count + min(RANGE_TRUE_COUNT) * -1 ][dealer.dealer_card().gameValue() - 1][self.hand_value() - 6]
-            
+
+
     def e_greedy_selection(self, q_values, epsilon):
         r = random.uniform(0.0, 1.0)
         max_q = max(q_values)
@@ -113,3 +115,32 @@ class Player(Person):
 
     def get_e_greedy_selection(self, dealer: Dealer, deck: playing_cards.Deck, epsilon: float):
         return self.e_greedy_selection(self.get_q_row(dealer, deck), epsilon)
+    
+    def max_q_accum(self, dealer: Dealer, deck: playing_cards.Deck):
+        accum = 0
+        for idx in range(0, 10):
+            if 0 < idx <= 5:
+                deck.runningCount += 1
+            elif idx == 0 or idx == 9:
+                deck.runningCount -= 1
+            self.hand.append(playing_cards.Card(playing_cards.VALUES[idx], 'C'))
+            accum += (deck.frequencyDistrib[idx] / deck.len) * max(self.get_q_row(dealer, deck))
+            self.hand = self.hand[:-1]
+            if 0 < idx <= 5:
+                deck.runningCount -= 1
+            elif idx == 0 or idx == 9:
+                deck.runningCount += 1
+        return accum
+    
+    def play_e_greedy(self, dealer: Dealer, deck: playing_cards.Deck, epsilon: float, lr: float, discount_factor: float):
+        action = self.get_e_greedy_selection(dealer, deck, epsilon)
+        while action != "STAND" and self.hand_value() <= 21:
+            q_row = self.get_q_row(dealer, deck)
+            if action == "HIT":
+                max_q = self.max_q_accum(dealer, deck)
+                self.hand.append(deck.pull())
+                if self.hand_value() > 21:
+                    q_row[0] = (1-lr) * q_row[0] + lr * -1
+                else:
+                    q_row[0] = (1-lr) * q_row[0] + lr * (0 + discount_factor * max_q)
+            action = self.get_e_greedy_selection(dealer, deck, epsilon)
