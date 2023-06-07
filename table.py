@@ -11,11 +11,12 @@ class Table:
             player.hand = []
         self.dealer.hand = []
     
-    def deal(self):
+    def train_iteration(self):
         for _ in range (0, 2):
             for p in self.players:
                 p.hand.append(self.deck.pull())
         self.dealer.hand.append(self.deck.pull_hole_card())
         self.dealer.hand.append(self.deck.pull())
+        
 
     
